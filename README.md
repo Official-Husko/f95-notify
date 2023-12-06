@@ -9,14 +9,14 @@ Get instant desktop notifications from [F95Zone](https://f95zone.to/) with this 
 
 ## Overview
 
-Are you chronically online and never want to miss a message from F95 like me? Do you like to contribute to the community and see reacts to your post? Then this is for you!
+Are you chronically online and never want to miss a message from F95 like me? Do you like to contribute to the community and see reactions to your posts? Then this is for you!
 
 ## Features
 
 - **Instant Notifications**: Stay informed with desktop notifications fetched every 5 minutes.
 - **Compact Size**: Small file size for quick and efficient usage.
 - **Portability**: Carry the tool with you wherever you go – no installation required.
-- **Open-Source**: Explore, modify, and contribute to the project on [GitHub](link-to-repository).
+- **Open-Source**: Explore, modify, and contribute to the project on [GitHub](https://github.com/Official-Husko/f95-notify).
 - **House-Trained**: *Should* not shit on the floor unless provoked.
 
 ## Getting Started

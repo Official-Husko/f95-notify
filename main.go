@@ -158,19 +158,24 @@ func onExit() {
 //
 // The function does not return anything.
 func runBackgroundProcess(config Config) {
-	ticker := time.NewTicker(5 * time.Minute) // set up a ticker to trigger the function periodically
-	defer ticker.Stop()                       // stop the ticker when the function ends
+	// set up a ticker to trigger the function periodically
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop() // stop the ticker when the function ends
 
 	for range ticker.C { // iterate over the ticker channel
-		url := "https://f95zone.to/account/unread-alert?_xfResponseType=json" // specify the URL for the GET request
-		headers := map[string]string{                                         // set up the headers for the GET request
+		// specify the URL for the GET request
+		url := "https://f95zone.to/account/unread-alert?_xfResponseType=json"
+
+		// set up the headers for the GET request
+		headers := map[string]string{
 			"User-Agent": fmt.Sprintf("F95 Notify/%s (by Official Husko on GitHub)", version),
 			"Accept":     "application/json",
 			"Cookie":     config.Cookie,
 			"_xfToken":   config.XFToken,
 		}
 
-		response, err := makeGetRequest(url, headers) // make the GET request
+		// make the GET request
+		response, err := makeGetRequest(url, headers)
 		if err != nil {
 			log.Printf("Error making GET request: %v\n", err) // log the error and continue to the next iteration
 			continue
@@ -185,15 +190,15 @@ func runBackgroundProcess(config Config) {
 			continue
 		}
 
-		totalUnread, err := data.Visitor.TotalUnread.Int64() // access the "total_unread" value
+		totalUnread, err := data.Visitor.TotalUnread.Int64()
 		if err != nil {
-			log.Println("Error converting TotalUnread to int64:", err) // log the conversion error
-		} else {
-			log.Printf("Total Unread: %d\n", totalUnread) // log the total unread count
+			log.Println("Error converting TotalUnread to int64:", err)
+		} else if totalUnread > 0 { // check if totalUnread is greater than 0
+			log.Printf("Total Unread: %d\n", totalUnread)
 
-			title := "New Notifications!"                                         // set up the title for the Windows notification
-			body := fmt.Sprintf("You have %d unread notifications.", totalUnread) // set up the body for the Windows notification
-			sendNotification(title, body)                                         // send the Windows notification
+			title := "New Notifications!"
+			body := fmt.Sprintf("You have %d unread notifications.", totalUnread)
+			sendNotification(title, body)
 		}
 	}
 }

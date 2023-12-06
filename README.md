@@ -2,7 +2,10 @@
 
 Get instant desktop notifications from [F95Zone](https://f95zone.to/) with this lightweight, portable, and open-source tool!
 
-![F95 Notifier](https://github.com/Official-Husko/f95-notify/blob/main/media/preview.gif)
+<p align="center">
+  <img src="https://github.com/Official-Husko/f95-notify/blob/main/media/preview.gif" alt="F95 Notifier">
+</p>
+
 
 ## Overview
 

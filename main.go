@@ -92,7 +92,7 @@ func onReady(config Config) func() {
 
 		// Set up the system tray icon and tooltip
 		systray.SetIcon(iconData)
-		systray.SetTooltip("Your Tray App")
+		systray.SetTooltip("F95-Notify v" + version)
 
 		// Add menu items
 		mViewNotifications := systray.AddMenuItem("View Notifications", "View unread notifications")
@@ -109,7 +109,7 @@ func onReady(config Config) func() {
 				case <-mViewNotifications.ClickedCh:
 					openURL("https://f95zone.to/account/alerts") // Replace with your actual URL
 				case <-mVisitGithub.ClickedCh:
-					openURL("https://github.com/") // Replace with your actual GitHub URL
+					openURL("https://github.com/Official-Husko/f95-notify") // Replace with your actual GitHub URL
 				case <-mQuit.ClickedCh:
 					log.Println("Quit menu item clicked")
 					systray.Quit()

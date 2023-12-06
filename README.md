@@ -1,9 +1,9 @@
-# F95 Notifier
+# F95 Notify
 
 Get instant desktop notifications from [F95Zone](https://f95zone.to/) with this lightweight, portable, and open-source tool!
 
 <p align="center">
-  <img src="https://github.com/Official-Husko/f95-notify/blob/main/media/preview.gif" alt="F95 Notifier">
+  <img src="https://github.com/Official-Husko/f95-notify/blob/main/media/preview.gif" alt="F95 Notify">
 </p>
 
 
@@ -28,7 +28,7 @@ Are you chronically online and never want to miss a message from F95 like me? Do
 
 ## How to Contribute
 
-If you'd like to contribute to the development of F95 Notifier, feel free to fork the repository, make your changes, and submit a pull request. We welcome your ideas and enhancements!
+If you'd like to contribute to the development of F95 Notify, feel free to fork the repository, make your changes, and submit a pull request. We welcome your ideas and enhancements!
 
 ## Support
 
@@ -40,7 +40,7 @@ This project is licensed under the [GPL-2.0 License](https://github.com/Official
 
 ---
 
-**Note:** F95 Notifier is an independent project and is not affiliated with or endorsed by F95Zone.
+**Note:** F95 Notify is an independent project and is not affiliated with or endorsed by F95Zone.
 
 ---
 

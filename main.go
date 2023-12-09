@@ -18,6 +18,8 @@ import (
 //go:embed icon.ico
 var content embed.FS
 
+var DEBUG = 0
+
 // Config represents the configuration structure
 type Config struct {
 	XFToken string `json:"_xfToken"`
@@ -32,7 +34,7 @@ type Data struct {
 }
 
 // Define a constant for the version
-const version = "1.0.0" // Replace with your actual version
+const version = "1.1.0" // Replace with your actual version
 
 // main is the entry point function for the program.
 //
@@ -159,7 +161,13 @@ func onExit() {
 // The function does not return anything.
 func runBackgroundProcess(config Config) {
 	// set up a ticker to trigger the function periodically
-	ticker := time.NewTicker(5 * time.Minute)
+	var ticker *time.Ticker
+	if DEBUG == 1 {
+		ticker = time.NewTicker(5 * time.Second)
+		log.Println("Debugging detected: using shorter ticker duration")
+	} else {
+		ticker = time.NewTicker(5 * time.Minute)
+	}
 	defer ticker.Stop() // stop the ticker when the function ends
 
 	for range ticker.C { // iterate over the ticker channel
@@ -188,6 +196,16 @@ func runBackgroundProcess(config Config) {
 		if err != nil {
 			log.Printf("Error unmarshalling JSON: %v\n", err) // log the error and continue to the next iteration
 			continue
+		}
+
+		// Check if "visitor" field and "total_unread" field are present
+		if data.Visitor.TotalUnread == "" {
+			log.Println("Error: 'total_unread' field is missing in the response JSON")
+
+			// Send a notification with "invalid" as title and body
+			title := "Outdated Session?"
+			body := "The server returned no data. Please update your Token and Cookie."
+			sendNotification(title, body)
 		}
 
 		totalUnread, err := data.Visitor.TotalUnread.Int64()

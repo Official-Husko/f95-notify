@@ -1,17 +1,29 @@
 //! Windows backend: WinRT toast notifications and a notification-area icon.
 //!
+//! Toasts are attributed to our own AppUserModelID, registered per user, so
+//! they show "F95 Notify" and its icon instead of "Windows PowerShell".
+//!
 //! The tray lives on its own thread with a Win32 message pump. State updates
 //! are handed over through a mutex and announced with a thread message, so the
 //! pump sleeps in `GetMessageW` instead of polling.
 
 use std::error::Error;
+use std::ffi::OsStr;
+use std::os::windows::ffi::OsStrExt;
+use std::path::PathBuf;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
-use std::{ptr, thread};
+use std::{env, fs, io, ptr, thread};
+
+use tauri_winrt_notification::Toast;
 
 use tray_icon::menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+use windows_sys::Win32::System::Registry::{
+    RegCloseKey, RegCreateKeyExW, RegSetValueExW, HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_OPTION_NON_VOLATILE,
+    REG_SZ,
+};
 use windows_sys::Win32::System::Threading::GetCurrentThreadId;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     DispatchMessageW, GetMessageW, PeekMessageW, PostThreadMessageW, TranslateMessage, MSG, PM_NOREMOVE, WM_APP,
@@ -33,19 +45,93 @@ pub fn attach_console() {
     unsafe { AttachConsole(ATTACH_PARENT_PROCESS) };
 }
 
-pub struct Notifier;
+/// AppUserModelID our toasts are attributed to.
+const APP_ID: &str = "OfficialHusko.F95Notify";
+static ICON_PNG: &[u8] = include_bytes!("../../icon.png");
 
-pub fn notifier(_events: Sender<Event>) -> Result<Box<dyn super::Notifier>> {
-    Ok(Box::new(Notifier))
+pub struct Notifier {
+    app_id: &'static str,
+    events: Sender<Event>,
+}
+
+pub fn notifier(events: Sender<Event>) -> Result<Box<dyn super::Notifier>> {
+    let app_id = match register_app_id() {
+        Ok(()) => APP_ID,
+        Err(e) => {
+            log::warning!("could not register toast identity ({e}); toasts will show as Windows PowerShell");
+            Toast::POWERSHELL_APP_ID
+        }
+    };
+    Ok(Box::new(Notifier { app_id, events }))
 }
 
 impl super::Notifier for Notifier {
     fn show(&mut self, n: &Notification) {
-        let result = notify_rust::Notification::new().appname(APP_NAME).summary(&n.title).body(&n.body).show();
-        if let Err(e) = result {
+        let mut toast = Toast::new(self.app_id).title(&n.title).text1(&n.body);
+        if let Some(command) = n.action {
+            let events = self.events.clone();
+            // Fires for a click on the toast body or its button while the app is running.
+            toast = toast.add_button(command.label(), "run").on_activated(move |_action| {
+                let _ = events.send(Event::Command(command));
+                Ok(())
+            });
+        }
+        if let Err(e) = toast.show() {
             log::error!("failed to send notification: {e}");
         }
     }
+}
+
+/// Registers `APP_ID` under `HKCU\Software\Classes\AppUserModelId`, which is how
+/// unpackaged apps give their toasts a display name and icon. Per-user, no admin.
+fn register_app_id() -> io::Result<()> {
+    let local = env::var_os("LOCALAPPDATA").ok_or_else(|| io::Error::other("LOCALAPPDATA is not set"))?;
+    let dir = PathBuf::from(local).join("f95-notify");
+    fs::create_dir_all(&dir)?;
+    let icon = dir.join("icon.png");
+    fs::write(&icon, ICON_PNG)?;
+
+    let key = wide(format!(r"Software\Classes\AppUserModelId\{APP_ID}"));
+    let mut hkey: HKEY = ptr::null_mut();
+    // SAFETY: NUL-terminated UTF-16 strings and a valid out-pointer; the key is closed below.
+    let status = unsafe {
+        RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            key.as_ptr(),
+            0,
+            ptr::null(),
+            REG_OPTION_NON_VOLATILE,
+            KEY_SET_VALUE,
+            ptr::null(),
+            &mut hkey,
+            ptr::null_mut(),
+        )
+    };
+    check(status)?;
+    let values = [("DisplayName", OsStr::new(APP_NAME)), ("IconUri", icon.as_os_str())];
+    let result = values.into_iter().try_for_each(|(name, value)| {
+        let (name, value) = (wide(name), wide(value));
+        // SAFETY: as above; the byte length covers the value and its NUL terminator.
+        let status =
+            unsafe { RegSetValueExW(hkey, name.as_ptr(), 0, REG_SZ, value.as_ptr().cast(), (value.len() * 2) as u32) };
+        check(status)
+    });
+    // SAFETY: `hkey` was opened above and is not used afterwards.
+    unsafe { RegCloseKey(hkey) };
+    result
+}
+
+fn check(status: u32) -> io::Result<()> {
+    if status == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::from_raw_os_error(status as i32))
+    }
+}
+
+/// A NUL-terminated UTF-16 string for Win32.
+fn wide(s: impl AsRef<OsStr>) -> Vec<u16> {
+    s.as_ref().encode_wide().chain([0]).collect()
 }
 
 pub struct Tray {

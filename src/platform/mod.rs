@@ -3,7 +3,9 @@
 //! | Platform      | Notifications                             | Tray                            |
 //! |---------------|-------------------------------------------|---------------------------------|
 //! | Linux / BSD   | `org.freedesktop.Notifications` (D-Bus)   | StatusNotifierItem (KDE native) |
-//! | Windows       | WinRT toasts                              | Win32 notification area         |
+//! | Windows       | WinRT toasts, clickable                   | Win32 notification area         |
+//!
+//! On Linux/BSD both go through `dbus.rs`, a minimal in-house D-Bus client.
 //! | macOS         | Notification Center                       | none (headless)                 |
 
 use std::sync::mpsc::Sender;
@@ -11,6 +13,8 @@ use std::sync::mpsc::Sender;
 use crate::app::{Command, Event};
 use crate::tracker::Status;
 
+#[cfg(all(unix, not(target_os = "macos")))]
+mod dbus;
 #[cfg(all(unix, not(target_os = "macos")))]
 #[path = "freedesktop.rs"]
 mod imp;

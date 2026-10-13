@@ -15,10 +15,10 @@ Are you chronically online and never want to miss a message from F95 like me? Do
 - **Instant Notifications**: Stay informed with desktop notifications, checked every 5 minutes (configurable). You get one notification when new alerts arrive, not a repeat on every check.
 - **Built-in Login**: Log in through an embedded browser window. The session is captured and saved for you, with no digging through dev tools.
 - **Native Everywhere**:
-  - **Linux / KDE Plasma**: speaks D-Bus directly. Tray icon via StatusNotifierItem, notifications via `org.freedesktop.Notifications` with an "Open Alerts" button, no GTK in the tray process. Also works on other desktops with a StatusNotifierItem host (e.g. GNOME with the AppIndicator extension).
-  - **Windows**: notification-area icon and toast notifications.
+  - **Linux / KDE Plasma**: speaks D-Bus directly through a tiny built-in client. Tray icon via StatusNotifierItem with a dbusmenu menu, and notifications via `org.freedesktop.Notifications` with an "Open Alerts" button. There's no GTK and no D-Bus library. If the app starts before the panel, the tray icon appears once the panel is up. Also works on other desktops with a StatusNotifierItem host (e.g. GNOME with the AppIndicator extension).
+  - **Windows**: notification-area icon and toast notifications under the app's own name and icon. Clicking a toast or its button opens your alerts, or the login window when the session has expired. Both `.exe`s carry the app icon and version info.
   - **macOS**: Notification Center (no menu bar icon yet).
-- **Featherweight**: A ~3 MB binary that idles at ~6 MB of RAM and ~0% CPU. The browser engine lives in a separate helper (`f95-notify-login`) that only runs while you log in.
+- **Featherweight**: A ~1.8 MB binary with 3 threads that idles at ~0% CPU and about 0.4 MB of private memory on Linux (~3.5 MB RSS, most of it libc and code shared with other processes). The browser engine lives in a separate helper (`f95-notify-login`) that only runs while you log in.
 - **Portable**: Drop the binaries in a folder with a `config.json` and go.
 - **Open-Source**: Explore, modify, and contribute to the project on [GitHub](https://github.com/Official-Husko/f95-notify).
 - **House-Trained**: *Should* not shit on the floor unless provoked.
@@ -92,11 +92,11 @@ The code is split into small components that talk through a single event channel
 | `f95` | HTTP client for the unread-alert endpoint |
 | `poller` | Background thread polling on an interval (wakes instantly for *Check Now*) |
 | `tracker` | Decides which results deserve a notification |
-| `platform` | Native notifications + tray per OS (`freedesktop.rs`, `windows.rs`, `macos.rs`) |
+| `platform` | Native notifications + tray per OS (`freedesktop.rs` on the minimal `dbus.rs` client, `windows.rs`, `macos.rs`) |
 | `app` | Main loop wiring everything together |
 | `bin/f95-notify-login` | The webview login helper |
 
-Runtime dependencies are kept minimal: `ureq` (HTTP over rustls), `serde_json`, and per platform `ksni` + `zbus` (Linux), `tray-icon` + `notify-rust` (Windows), and `notify-rust` (macOS). `wry` + `tao` are used only by the login helper.
+Runtime dependencies are kept minimal: `ureq` (HTTP over rustls) and `serde_json` everywhere. On Linux that's all; D-Bus is handled in-house. Windows adds `tray-icon`, `tauri-winrt-notification` and `windows-sys`, and macOS adds `notify-rust`. `wry` + `tao` are used only by the login helper. At build time, `png` prepares the icons and `embed-resource` embeds the Windows resources.
 
 ## How to Contribute
 

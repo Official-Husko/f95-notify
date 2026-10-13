@@ -11,6 +11,8 @@ pub const ALERTS_URL: &str = "https://f95zone.to/account/alerts";
 pub const REPO_URL: &str = "https://github.com/Official-Husko/f95-notify";
 const UNREAD_URL: &str = "https://f95zone.to/account/unread-alert?_xfResponseType=json";
 const TIMEOUT: Duration = Duration::from_secs(30);
+/// The response is a tiny JSON document, so ureq's 128 KiB default buffers are overkill.
+const BUFFER_SIZE: usize = 32 * 1024;
 
 #[derive(Debug)]
 pub enum Error {
@@ -39,6 +41,12 @@ impl Client {
     pub fn new(config: &Config) -> Self {
         let agent = ureq::Agent::config_builder()
             .timeout_global(Some(TIMEOUT))
+            .input_buffer_size(BUFFER_SIZE)
+            .output_buffer_size(BUFFER_SIZE / 2)
+            .max_response_header_size(BUFFER_SIZE)
+            // Polls are minutes apart and the server drops idle connections long before
+            // the next one, so pooling would only hold buffers and a socket for nothing.
+            .max_idle_connections(0)
             .user_agent(concat!("F95 Notify/", env!("CARGO_PKG_VERSION"), " (by Official Husko on GitHub)"))
             .build()
             .into();

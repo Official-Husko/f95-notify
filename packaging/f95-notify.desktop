@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=F95 Notify
+Comment=Desktop notifications for F95Zone alerts
+Exec=f95-notify
+Icon=f95-notify
+Terminal=false
+Categories=Network;
+Keywords=f95;f95zone;notifications;alerts;
+StartupNotify=false
+X-KDE-StartupNotify=false
